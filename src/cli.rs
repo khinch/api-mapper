@@ -12,6 +12,9 @@ pub fn menu() {
         println!("1: Add datapoint");
         println!("2: Delete datapoint");
         println!("3: List datapoints");
+        println!("4: Add application");
+        println!("5: Delete application");
+        println!("6: List applications");
         println!("0: Exit");
 
         let mut choice = String::new();
@@ -48,6 +51,28 @@ pub fn menu() {
                 }
                 pause();
             }
+            4 => {
+                println!("");
+                println!("Add Application: ");
+                capture_application(&mut controller);
+            }
+            5 => {
+                println!("");
+                println!("Delete Application: ");
+                delete_application(&mut controller);
+            }
+            6 => {
+                println!("");
+                println!("Applications: ");
+
+                for a in controller.get_applications() {
+                    println!(
+                        "Name: {}. Description: {}. ID: {}",
+                        a.name, a.description, a.id
+                    );
+                }
+                pause();
+            }
             0 => {
                 println!("Exiting ...");
                 break;
@@ -77,6 +102,25 @@ fn capture_datapoint(controller: &mut Controller) {
     controller.add_data_point(name.trim().to_string(), description.trim().to_string());
 }
 
+fn capture_application(controller: &mut Controller) {
+    let mut name = String::new();
+    let mut description = String::new();
+
+    println!("Enter application name: ");
+
+    io::stdin()
+        .read_line(&mut name)
+        .expect("Failed to read name from console");
+
+    println!("Enter application description: ");
+
+    io::stdin()
+        .read_line(&mut description)
+        .expect("Failed to read description from console");
+
+    controller.add_application(name.trim().to_string(), description.trim().to_string());
+}
+
 fn delete_datapoint(controller: &mut Controller) {
     println!("Enter datapoint ID: ");
     loop {
@@ -99,6 +143,40 @@ fn delete_datapoint(controller: &mut Controller) {
         match result {
             Ok(_) => {
                 println!("Deleted data point with ID: {}", id);
+            }
+            Err(msg) => {
+                println!("{}", msg);
+            }
+        };
+
+        break;
+    }
+
+    pause();
+}
+
+fn delete_application(controller: &mut Controller) {
+    println!("Enter application ID: ");
+    loop {
+        let mut id = String::new();
+
+        io::stdin()
+            .read_line(&mut id)
+            .expect("Failed to read ID from console");
+
+        let id: usize = match id.trim().parse() {
+            Ok(num) => num,
+            Err(error) => {
+                println!("Invalid ID: {}", error);
+                break;
+            }
+        };
+
+        let result = controller.remove_application(id);
+
+        match result {
+            Ok(_) => {
+                println!("Deleted application with ID: {}", id);
             }
             Err(msg) => {
                 println!("{}", msg);

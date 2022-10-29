@@ -3,5 +3,6 @@ pub mod controller;
 pub mod cli;
 
 fn main() {
-    cli::menu();
+    // TODO let input_path = std::env::args().nth(1).unwrap();
+    cli::main_menu();
 }

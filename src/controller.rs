@@ -1,6 +1,9 @@
+use serde::{Serialize,Deserialize};
 use crate::model::{Application, DataPoint};
 
+#[derive(Serialize,Deserialize)]
 pub struct Controller {
+    system_name: String,
     data_points: Vec<DataPoint>,
     next_data_point_id: usize,
     applications: Vec<Application>,
@@ -8,13 +11,22 @@ pub struct Controller {
 }
 
 impl Controller {
-    pub fn new() -> Self {
+    pub fn new(system_name: String) -> Self {
         Controller {
+            system_name,
             data_points: Vec::new(),
             next_data_point_id: 1,
             applications: Vec::new(),
             next_application_id: 1,
         }
+    }
+
+    pub fn system_name(&self) -> &str {
+        &self.system_name
+    }
+
+    pub fn change_name(&mut self, new_name: String) {
+        self.system_name = new_name;
     }
 
     pub fn add_data_point(&mut self, name: String, description: String) {

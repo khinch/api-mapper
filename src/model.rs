@@ -1,3 +1,6 @@
+use serde::{Serialize,Deserialize};
+
+#[derive(Serialize,Deserialize)]
 pub struct DataPoint {
     pub id: usize,
     pub name: String,
@@ -14,6 +17,7 @@ impl DataPoint {
     }
 }
 
+#[derive(Serialize,Deserialize)]
 pub struct Application {
     pub id: usize,
     pub name: String,

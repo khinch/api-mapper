@@ -1,46 +1,139 @@
 use crate::controller::Controller;
-use std::io;
+use serde_json;
+use std::fs::File;
+use std::io::{self, Write};
+use std::path::Path;
 
-pub fn menu() {
-    let mut controller = Controller::new();
+pub fn main_menu() {
+    let mut controller = Controller::new(String::from("New System"));
 
     loop {
-        println!("**********************");
-        println!("***** API Mapper *****");
-        println!("**********************");
-        println!("");
-        println!("1: Add datapoint");
-        println!("2: Delete datapoint");
-        println!("3: List datapoints");
-        println!("4: Add application");
-        println!("5: Delete application");
-        println!("6: List applications");
+        println!();
+        println!("**********************************");
+        println!("***** API Mapper - Main Menu *****");
+        println!("**********************************");
+        println!("System Name: {}", controller.system_name());
+        println!();
+        println!("1: Load from file");
+        println!("2: Save to file");
+        println!("3: Change system name");
+        println!("4: New system");
+        println!("5: System menu");
         println!("0: Exit");
 
-        let mut choice = String::new();
+        let choice = read_from_console();
 
-        io::stdin()
-            .read_line(&mut choice)
-            .expect("Failed to read from console");
-
-        let choice: u32 = match choice.trim().parse() {
+        let choice: u32 = match choice.parse() {
             Ok(num) => num,
             Err(_) => continue,
         };
 
         match choice {
             1 => {
-                println!("");
-                println!("Add DataPoint: ");
-                capture_datapoint(&mut controller);
+                println!();
+                println!("Enter filename: ");
+                let filename = read_from_console();
+                match load_from_file(&filename) {
+                    Ok(c) => {
+                        controller = c;
+                        println!("Load successful: {}", filename);
+                    }
+                    Err(e) => {
+                        println!("{}: {}", filename, e)
+                    }
+                }
+
+                pause();
             }
             2 => {
-                println!("");
-                println!("Delete DataPoint: ");
-                delete_datapoint(&mut controller);
+                println!();
+                println!("Enter filename: ");
+                let filename = read_from_console();
+                match save_to_file(&controller, &filename) {
+                    Ok(()) => println!("Save successful."),
+                    Err(e) => println!("{}: {}", filename, e),
+                }
+                pause();
             }
             3 => {
-                println!("");
+                println!();
+                change_system_name(&mut controller);
+            }
+            4 => {
+                println!();
+                println!("Starting new system: ");
+                controller = Controller::new(String::from("New System"));
+                pause();
+            }
+            5 => {
+                system_menu(&mut controller);
+            }
+            0 => {
+                println!("Exiting ...");
+                break;
+            }
+            _ => continue,
+        }
+        println!();
+    }
+}
+
+fn system_menu(controller: &mut Controller) {
+    loop {
+        println!("**********************************");
+        println!("********** System Menu ***********");
+        println!("**********************************");
+        println!();
+        println!("1: Manage datapoints");
+        println!("2: Manage applications");
+        println!("0: Main menu");
+
+        let choice = read_from_console();
+
+        let choice: u32 = match choice.parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        match choice {
+            1 => {
+                println!();
+                datapoint_menu(controller);
+            }
+            2 => {
+                println!();
+                application_menu(controller);
+            }
+            0 => {
+                break;
+            }
+            _ => continue,
+        }
+        println!();
+    }
+}
+
+fn datapoint_menu(controller: &mut Controller) {
+    loop {
+        println!("**********************************");
+        println!("********* Datapoint Menu *********");
+        println!("**********************************");
+        println!();
+        println!("1: List datapoints");
+        println!("2: Add datapoint");
+        println!("3: Delete datapoint");
+        println!("0: System menu");
+
+        let choice = read_from_console();
+
+        let choice: u32 = match choice.parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        match choice {
+            1 => {
+                println!();
                 println!("DataPoints: ");
 
                 for d in controller.get_data_points() {
@@ -51,18 +144,46 @@ pub fn menu() {
                 }
                 pause();
             }
-            4 => {
-                println!("");
-                println!("Add Application: ");
-                capture_application(&mut controller);
+            2 => {
+                println!();
+                println!("Add DataPoint: ");
+                capture_datapoint(controller);
             }
-            5 => {
-                println!("");
-                println!("Delete Application: ");
-                delete_application(&mut controller);
+            3 => {
+                println!();
+                println!("Delete DataPoint: ");
+                delete_datapoint(controller);
             }
-            6 => {
-                println!("");
+            0 => {
+                break;
+            }
+            _ => continue,
+        }
+        println!();
+    }
+}
+
+fn application_menu(controller: &mut Controller) {
+    loop {
+        println!("**********************************");
+        println!("******** Application Menu ********");
+        println!("**********************************");
+        println!();
+        println!("1: List applications");
+        println!("2: Add application");
+        println!("3: Delete application");
+        println!("0: System menu");
+
+        let choice = read_from_console();
+
+        let choice: u32 = match choice.parse() {
+            Ok(num) => num,
+            Err(_) => continue,
+        };
+
+        match choice {
+            1 => {
+                println!();
                 println!("Applications: ");
 
                 for a in controller.get_applications() {
@@ -73,64 +194,91 @@ pub fn menu() {
                 }
                 pause();
             }
+            2 => {
+                println!();
+                println!("Add Application: ");
+                capture_application(controller);
+            }
+            3 => {
+                println!();
+                println!("Delete Application: ");
+                delete_application(controller);
+            }
             0 => {
-                println!("Exiting ...");
                 break;
             }
             _ => continue,
         }
-        println!("");
+        println!();
+    }
+}
+
+fn save_to_file(controller: &Controller, filename: &String) -> Result<(), String> {
+    // TODO try this in a one-liner
+    if Path::new(filename).exists() {
+        if !prompt_to_continue(String::from("File exists. Overwrite?")) {
+            return Err(String::from("Aborting overwrite of existing file."));
+        }
+    }
+
+    let file = File::create(filename);
+    let mut file = match file {
+        Ok(f) => f,
+        Err(e) => return Err(e.to_string()),
+    };
+
+    let serialised = serde_json::to_string_pretty(&controller);
+    let serialised = match serialised {
+        Ok(s) => s,
+        Err(e) => return Err(format!("{}", e)),
+    };
+
+    match file.write(serialised.as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+fn load_from_file(filename: &str) -> Result<Controller, String> {
+    let serialised = std::fs::read_to_string(filename);
+    let serialised = match serialised {
+        Ok(s) => s,
+        Err(err) => return Err(err.to_string()),
+    };
+
+    let controller = serde_json::from_str::<Controller>(&serialised);
+    match controller {
+        Ok(c) => return Ok(c),
+        Err(err) => return Err(err.to_string()),
     }
 }
 
 fn capture_datapoint(controller: &mut Controller) {
-    let mut name = String::new();
-    let mut description = String::new();
-
     println!("Enter datapoint name: ");
-
-    io::stdin()
-        .read_line(&mut name)
-        .expect("Failed to read name from console");
+    let name = read_from_console();
 
     println!("Enter datapoint description: ");
+    let description = read_from_console();
 
-    io::stdin()
-        .read_line(&mut description)
-        .expect("Failed to read description from console");
-
-    controller.add_data_point(name.trim().to_string(), description.trim().to_string());
+    controller.add_data_point(name, description);
 }
 
 fn capture_application(controller: &mut Controller) {
-    let mut name = String::new();
-    let mut description = String::new();
-
     println!("Enter application name: ");
-
-    io::stdin()
-        .read_line(&mut name)
-        .expect("Failed to read name from console");
+    let name = read_from_console();
 
     println!("Enter application description: ");
+    let description = read_from_console();
 
-    io::stdin()
-        .read_line(&mut description)
-        .expect("Failed to read description from console");
-
-    controller.add_application(name.trim().to_string(), description.trim().to_string());
+    controller.add_application(name, description);
 }
 
 fn delete_datapoint(controller: &mut Controller) {
     println!("Enter datapoint ID: ");
     loop {
-        let mut id = String::new();
+        let id = read_from_console();
 
-        io::stdin()
-            .read_line(&mut id)
-            .expect("Failed to read ID from console");
-
-        let id: usize = match id.trim().parse() {
+        let id: usize = match id.parse() {
             Ok(num) => num,
             Err(error) => {
                 println!("Invalid ID: {}", error);
@@ -158,13 +306,9 @@ fn delete_datapoint(controller: &mut Controller) {
 fn delete_application(controller: &mut Controller) {
     println!("Enter application ID: ");
     loop {
-        let mut id = String::new();
+        let id = read_from_console();
 
-        io::stdin()
-            .read_line(&mut id)
-            .expect("Failed to read ID from console");
-
-        let id: usize = match id.trim().parse() {
+        let id: usize = match id.parse() {
             Ok(num) => num,
             Err(error) => {
                 println!("Invalid ID: {}", error);
@@ -189,10 +333,33 @@ fn delete_application(controller: &mut Controller) {
     pause();
 }
 
+fn change_system_name(controller: &mut Controller) {
+    println!("Enter new system name: ");
+    controller.change_name(read_from_console());
+}
+
 fn pause() {
     println!("Press enter to return to menu ...");
-    let mut useless = String::new();
+    let _useless = read_from_console();
+}
+
+fn read_from_console() -> String {
+    let mut input = String::new();
+
     io::stdin()
-        .read_line(&mut useless)
-        .expect("Failed to read console input");
+        .read_line(&mut input)
+        .expect("Failed to read from console");
+
+    input.trim().to_string()
+}
+
+fn prompt_to_continue(prompt: String) -> bool {
+    loop {
+        println!("{} (y/n)", prompt);
+        match read_from_console().to_lowercase().as_str() {
+            "y" => return true,
+            "n" => return false,
+            _ => continue,
+        }
+    }
 }

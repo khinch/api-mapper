@@ -8,12 +8,12 @@ pub fn main_menu() {
     let mut controller = Controller::new(String::from("New System"));
 
     loop {
-        println!("");
+        println!();
         println!("**********************************");
         println!("***** API Mapper - Main Menu *****");
         println!("**********************************");
         println!("System Name: {}", controller.system_name());
-        println!("");
+        println!();
         println!("1: Load from file");
         println!("2: Save to file");
         println!("3: Change system name");
@@ -30,7 +30,7 @@ pub fn main_menu() {
 
         match choice {
             1 => {
-                println!("");
+                println!();
                 println!("Enter filename: ");
                 let filename = read_from_console();
                 match load_from_file(&filename) {
@@ -46,7 +46,7 @@ pub fn main_menu() {
                 pause();
             }
             2 => {
-                println!("");
+                println!();
                 println!("Enter filename: ");
                 let filename = read_from_console();
                 match save_to_file(&controller, &filename) {
@@ -56,11 +56,11 @@ pub fn main_menu() {
                 pause();
             }
             3 => {
-                println!("");
+                println!();
                 change_system_name(&mut controller);
             }
             4 => {
-                println!("");
+                println!();
                 println!("Starting new system: ");
                 controller = Controller::new(String::from("New System"));
                 pause();
@@ -74,7 +74,7 @@ pub fn main_menu() {
             }
             _ => continue,
         }
-        println!("");
+        println!();
     }
 }
 
@@ -83,7 +83,7 @@ fn system_menu(controller: &mut Controller) {
         println!("**********************************");
         println!("********** System Menu ***********");
         println!("**********************************");
-        println!("");
+        println!();
         println!("1: Manage datapoints");
         println!("2: Manage applications");
         println!("0: Main menu");
@@ -97,11 +97,11 @@ fn system_menu(controller: &mut Controller) {
 
         match choice {
             1 => {
-                println!("");
+                println!();
                 datapoint_menu(controller);
             }
             2 => {
-                println!("");
+                println!();
                 application_menu(controller);
             }
             0 => {
@@ -109,7 +109,7 @@ fn system_menu(controller: &mut Controller) {
             }
             _ => continue,
         }
-        println!("");
+        println!();
     }
 }
 
@@ -118,7 +118,7 @@ fn datapoint_menu(controller: &mut Controller) {
         println!("**********************************");
         println!("********* Datapoint Menu *********");
         println!("**********************************");
-        println!("");
+        println!();
         println!("1: List datapoints");
         println!("2: Add datapoint");
         println!("3: Delete datapoint");
@@ -133,7 +133,7 @@ fn datapoint_menu(controller: &mut Controller) {
 
         match choice {
             1 => {
-                println!("");
+                println!();
                 println!("DataPoints: ");
 
                 for d in controller.get_data_points() {
@@ -145,12 +145,12 @@ fn datapoint_menu(controller: &mut Controller) {
                 pause();
             }
             2 => {
-                println!("");
+                println!();
                 println!("Add DataPoint: ");
                 capture_datapoint(controller);
             }
             3 => {
-                println!("");
+                println!();
                 println!("Delete DataPoint: ");
                 delete_datapoint(controller);
             }
@@ -159,7 +159,7 @@ fn datapoint_menu(controller: &mut Controller) {
             }
             _ => continue,
         }
-        println!("");
+        println!();
     }
 }
 
@@ -168,7 +168,7 @@ fn application_menu(controller: &mut Controller) {
         println!("**********************************");
         println!("******** Application Menu ********");
         println!("**********************************");
-        println!("");
+        println!();
         println!("1: List applications");
         println!("2: Add application");
         println!("3: Delete application");
@@ -183,7 +183,7 @@ fn application_menu(controller: &mut Controller) {
 
         match choice {
             1 => {
-                println!("");
+                println!();
                 println!("Applications: ");
 
                 for a in controller.get_applications() {
@@ -195,12 +195,12 @@ fn application_menu(controller: &mut Controller) {
                 pause();
             }
             2 => {
-                println!("");
+                println!();
                 println!("Add Application: ");
                 capture_application(controller);
             }
             3 => {
-                println!("");
+                println!();
                 println!("Delete Application: ");
                 delete_application(controller);
             }
@@ -209,7 +209,7 @@ fn application_menu(controller: &mut Controller) {
             }
             _ => continue,
         }
-        println!("");
+        println!();
     }
 }
 

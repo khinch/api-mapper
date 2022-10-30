@@ -2,6 +2,7 @@ use crate::controller::Controller;
 use serde_json;
 use std::fs::File;
 use std::io::{self, Write};
+use std::path::Path;
 
 pub fn main_menu() {
     let mut controller = Controller::new(String::from("New System"));
@@ -33,15 +34,25 @@ pub fn main_menu() {
                 println!("Enter filename: ");
                 let filename = read_from_console();
                 match load_from_file(&filename) {
-                    Ok(c) => controller = c,
-                    Err(e) => println!("{}: {}", filename, e),
+                    Ok(c) => {
+                        controller = c;
+                        println!("Load successful: {}", filename);
+                    }
+                    Err(e) => {
+                        println!("{}: {}", filename, e)
+                    }
                 }
-                println!("Load successful: {}", filename);
+
                 pause();
             }
             2 => {
                 println!("");
-                save_to_file(&controller);
+                println!("Enter filename: ");
+                let filename = read_from_console();
+                match save_to_file(&controller, &filename) {
+                    Ok(()) => println!("Save successful."),
+                    Err(e) => println!("{}: {}", filename, e),
+                }
                 pause();
             }
             3 => {
@@ -202,22 +213,37 @@ fn application_menu(controller: &mut Controller) {
     }
 }
 
-fn save_to_file(controller: &Controller) {
-    println!("Enter filename: ");
-    let filename = read_from_console();
-    let mut file = File::create(filename).unwrap();
+fn save_to_file(controller: &Controller, filename: &String) -> Result<(), String> {
+    // TODO try this in a one-liner
+    if Path::new(filename).exists() {
+        if !prompt_to_continue(String::from("File exists. Overwrite?")) {
+            return Err(String::from("Aborting overwrite of existing file."));
+        }
+    }
 
-    let serialised = serde_json::to_string_pretty(&controller).unwrap();
+    let file = File::create(filename);
+    let mut file = match file {
+        Ok(f) => f,
+        Err(e) => return Err(e.to_string()),
+    };
 
-    file.write(serialised.as_bytes()).unwrap();
+    let serialised = serde_json::to_string_pretty(&controller);
+    let serialised = match serialised {
+        Ok(s) => s,
+        Err(e) => return Err(format!("{}", e)),
+    };
+
+    match file.write(serialised.as_bytes()) {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e.to_string()),
+    }
 }
 
 fn load_from_file(filename: &str) -> Result<Controller, String> {
-    
     let serialised = std::fs::read_to_string(filename);
     let serialised = match serialised {
-        Ok(s) => s, 
-        Err(err) => return Err(err.to_string()), 
+        Ok(s) => s,
+        Err(err) => return Err(err.to_string()),
     };
 
     let controller = serde_json::from_str::<Controller>(&serialised);
@@ -325,4 +351,15 @@ fn read_from_console() -> String {
         .expect("Failed to read from console");
 
     input.trim().to_string()
+}
+
+fn prompt_to_continue(prompt: String) -> bool {
+    loop {
+        println!("{} (y/n)", prompt);
+        match read_from_console().to_lowercase().as_str() {
+            "y" => return true,
+            "n" => return false,
+            _ => continue,
+        }
+    }
 }
